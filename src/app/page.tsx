@@ -14,7 +14,8 @@ import GeneralInfo from "@/components/GameInfo/general";
 import SetUp from "@/components/Setup";
 import Settings from "@/components/Setup/settings";
 
-const API = "http://c2r7s5.42wolfsburg.de:5555";
+// const API = "http://c2r7s5.42wolfsburg.de:5555";
+const API = "http://localhost:5555";
 
 export default function Home() {
     const [socket, setSocket] = useState<Socket | null>(null);
