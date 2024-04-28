@@ -1,84 +1,47 @@
-import { Alert, CodeMockup, Textarea } from "react-daisyui";
+import { Alert, CodeMockup, Divider, Textarea } from "react-daisyui";
 import MessageInput from "./input";
 import Bubble from "./bubble";
 import { Socket } from "socket.io-client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SetUp from "../Setup";
-
-interface User {
-    id: string;
-    username: string;
-    admin: boolean;
-}
+import { Game, Player } from "@/types";
 
 interface Data {
-    user: User | null;
-    roomId: string;
+    user: Player | null;
+    game: Game | null;
     socket: Socket | null;
-    setViewer: (value: boolean) => void;
-    isViewer: boolean;
 }
 
-interface UserMessages {
-    username: string;
-    message: string;
-    color: "info" | "success" | "error" | "warning" | undefined;
+interface Messages {
+    username: string | undefined;
+    text: string;
     type: string;
+    color: "info" | "success" | "error" | "warning" | undefined;
 }
 
-export default function ChatBox({ user, roomId, socket, isViewer, setViewer }: Data) {
-    const [messages, setMessages] = useState<UserMessages[]>([]);
+export default function ChatBox({ user, game, socket }: Data) {
+    const [messages, setMessages] = useState<Messages[]>([]);
     const [timer, setTimer] = useState(-1);
-    const [allowInput, setAllowInput] = useState(false);
-
-    function StartTimer(startTime: number) {
-        setTimer(startTime);
-        const intervalId = setInterval(() => {
-            setTimer((prevTimer) => prevTimer - 1);
-        }, 1000);
-
-        setTimeout(() => {
-            clearInterval(intervalId);
-            setTimer(0);
-        }, startTime * 1000);
-    }
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (socket) {
             socket.on("message", (data) => {
+                data.text = data.text.replaceAll(`${user?.name}`,"You");  
                 setMessages((prev) => [...prev, data]);
-            });
-
-            socket.on("systemMessage", (data) => {
-                setMessages((prev) => [
-                    ...prev,
-                    { username: "SYSTEM", message: data?.text, type: data?.type, color: data?.color },
-                ]);
-                if(data?.time)
-                    StartTimer(data?.time);
-                if(data?.type == "question")
-                    setAllowInput(true);
-            });
-
-            socket.on("kick", (data) => {
-                if (user?.username === data?.username) setViewer(true);
-
-                setMessages((prev) => [
-                    ...prev,
-                    { username: "SYSTEM", message: `${data?.username} has been kicked`, type: "info", color: "error" },
-                ]);
             });
         }
 
         return () => {
             if (socket) {
                 socket.off("message");
-                socket.off("systemMessage");
-                socket.off("question");
-                socket.off("kick");
             }
         };
     });
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
 
     const TimerElement = () => {
@@ -91,42 +54,45 @@ export default function ChatBox({ user, roomId, socket, isViewer, setViewer }: D
     };
 
     return (
-        <div className="lg:h-full">
-            <div className="flex flex-col h-full justify-between mx-auto">
-                <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl min-h-[500px] h-full mb-10 p-10 w-full">
-                    <div className="overflow-y-auto max-h-[900px]">
-                        {messages.map((message, index) => {
-                            if (message.type === "info" || message.type === "question") {
-                                return (
-                                    <Alert key={index} className="mx-auto my-5" status={message.color}>
-                                        <span>{message.message}</span>
-                                    </Alert>
-                                );
-                            }
-
-                            return (
-                                <Bubble
-                                    header={message.username}
-                                    message={message.message}
-                                    key={index}
-                                    side={message.username === user?.username ? "end" : "front"}
-                                />
-                            );
-                        })}
+        <>
+            <div className="lg:h-full">
+                <div className="flex flex-col h-full justify-between mx-auto">
+                    <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl min-h-[70vh] mb-10 p-10 w-full">
+                        <div className="overflow-y-auto max-h-[65vh]">
+                            {messages.map((message, index) => {
+                                switch (message.type) {
+                                    case "info":
+                                        return (
+                                            <Divider key={index} className="text-center my-5" color={message.color}>
+                                                <div dangerouslySetInnerHTML={{ __html: message.text }} />
+                                            </Divider>
+                                        );
+                                    case "alert":
+                                        return (
+                                            <Alert key={index} className="mx-auto my-5" status={message.color}>
+                                                <div dangerouslySetInnerHTML={{ __html: message.text }} />
+                                            </Alert>
+                                        );
+                                    default:
+                                        return (
+                                            <Bubble
+                                                header={message.username}
+                                                message={message.text}
+                                                key={index}
+                                                side={message.username === user?.name ? "end" : "front"}
+                                            />
+                                        );
+                                }
+                            })}
+                            {/* This empty div serves as a reference point for scrolling */}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        <TimerElement />
                     </div>
-                    <TimerElement />
-                </div>
 
-                {!isViewer && (
-                    <MessageInput
-                        user={user}
-                        roomId={roomId}
-                        socket={socket}
-                        allowInput={allowInput}
-                        setAllowInput={setAllowInput}
-                    />
-                )}
+                    {!user?.viewer && <MessageInput game={game} socket={socket} />}
+                </div>
             </div>
-        </div>
+        </>
     );
 }

@@ -1,149 +1,141 @@
 "use client";
 
-import Image from "next/image";
-import Swal from "sweetalert2";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import io, { Socket } from "socket.io-client";
+import { Game } from "@/types";
 
-import { v4 as uuidv4 } from "uuid";
-import { CodeMockup } from "react-daisyui";
-import ChatBox from "@/components/ChatBox";
-import UsersList from "@/components/GameInfo/users";
-import GeneralInfo from "@/components/GameInfo/general";
-import SetUp from "@/components/Setup";
-import Settings from "@/components/Setup/settings";
-
-// const API = "http://c2r7s5.42wolfsburg.de:5555";
-const API = "http://localhost:5555";
+import { Button, CodeMockup } from "react-daisyui";
+import { Bounce, toast } from "react-toastify";
+import Link from "next/link";
+import { api } from "@/config.json";
 
 export default function Home() {
     const [socket, setSocket] = useState<Socket | null>(null);
+    const [games, setGames] = useState<Game[]>([]);
+    const [online, setOnline] = useState(0);
+    const [timers, setTimers] = useState<{ [key: number]: number }>({});
 
-    interface User {
-        id: string;
-        username: string;
-        admin: boolean;
-        viewer: boolean;
-    }
-    
-    const [user, setUser] = useState<User | null>(null);
-    const [users, setUsers] = useState<string[]>([]);
-    const [roomId, setRoomId] = useState("");
-    const [isViewer, setViewer] = useState(false);
-    const [game, setGame] = useState(null);
+    const createGame = () => {
+        if (!socket) return;
 
-    const handleJoinChat = (roomId: string) => {
-        if (roomId.trim() !== "") {
-            if (socket) (socket as any).disconnect();
-
-            const newSocket = io(API, {
-                transports: ["websocket"],
-            });
-
-            setSocket(newSocket);
-            newSocket.emit("join", { roomId, userId: uuidv4() });
-        }
+        console.log("Creating game");
+        socket.emit("createGame", { name: "GuessAI" });
     };
 
-    function showLogin() {
-        return Swal.fire({
-            title: "Enter the Room ID",
-            input: "text",
-            inputAttributes: {
-                autocapitalize: "off",
-            },
-            showCancelButton: false,
-            allowOutsideClick: false,
-            confirmButtonText: "Look up",
-            showLoaderOnConfirm: true,
-            allowEscapeKey: false,
-            preConfirm: async (roomId: string) => {
-                try {
-                    // if (roomId.length < 5)
-                    //     return Swal.showValidationMessage("Room Id must be at least 5 characters long.");
-
-                    const response = await axios.post(`${API}/checkRoom`, {
-                        roomId,
-                    });
-                    if (response?.data?.error) {
-                        return Swal.showValidationMessage(response.data.error);
-                    }
-                    setRoomId(roomId);
-
-                    return [roomId];
-                } catch (error) {
-                    return Swal.showValidationMessage("An error occurred while connecting to the server.");
-                }
-            },
-        }).then((result) => {
-            if (result.isConfirmed) {
-                handleJoinChat(result?.value?.[0] || "");
-            }
-        });
-    }
-
     useEffect(() => {
-        showLogin();
+        const newSocket = io(api, {
+            transports: ["websocket"],
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            if (newSocket) {
+                newSocket.disconnect();
+            }
+        };
     }, []);
-
-    interface Message {
-        message: string;
-        username?: string;
-        info?: boolean;
-        joined?: boolean;
-    }
-
-    interface UserListData {
-        chatUsernames: string[];
-    }
 
     useEffect(() => {
         if (socket) {
-            socket.on("user", (data: User) => {
-                setUser(data);
+            socket.on("update", (data: any) => {
+                setGames(data?.games || []);
+                setOnline(data?.online || 0);
+            });
+
+            socket.on("error", (data: any) => {
+                if (!data?.text) return;
+                toast.error(data?.text, {
+                    position: "bottom-center",
+                    autoClose: 2000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    draggable: true,
+                    theme: "dark",
+                    transition: Bounce,
+                });
             });
         }
-    
-        // Clean up the event listener
+
         return () => {
             if (socket) {
-                socket.off("user");
+                socket.off("online");
+                socket.off("error");
             }
         };
     }, [socket]);
-    
+
     useEffect(() => {
-        if (socket && user) {
-            socket.on("userList", (data: UserListData) => {
-                const userList = data?.chatUsernames.filter((item) => item != user?.username);
-                setUsers(userList);
+        if (!socket) return;
+
+        socket.emit("join");
+    }, [socket]);
+
+    useEffect(() => {
+        // Function to update timers
+        const updateTimers = () => {
+            const updatedTimers: { [key: number]: number } = {};
+
+            games.forEach((game: Game, index: number) => {
+                const startTime = new Date(game.startTime).getTime();
+                const currentTime = new Date().getTime();
+                const timeDifference = Math.max(0, startTime - currentTime); // Ensure the timer doesn't go negative
+
+                updatedTimers[index] = Math.floor(timeDifference / 1000); // Convert milliseconds to seconds
             });
-        }
-    
-        return () => {
-            if (socket) {
-                socket.off("userList");
-            }
+
+            setTimers(updatedTimers);
         };
-    }, [socket, user]); 
-    
-    if(!user) return ;
+
+        // Call updateTimers immediately to update timers without delay
+        updateTimers();
+
+        // Update timers every second
+        const timerInterval = setInterval(updateTimers, 1000);
+
+        // Clear interval on component unmount or if games array changes
+        return () => clearInterval(timerInterval);
+    }, [games]);
+
+    if (!Array.isArray(games)) {
+        return <p>No game information available.</p>;
+    }
 
     return (
-        <main className="bg-gray-800 overflow-x-hidden lg:overflow-hidden h-full lg:h-screen">
-            <SetUp socket={socket}/>
-            <h1 className="text-center pt-5">AI Games</h1>
+        <main className="bg-gray-800 min-h-screen">
+            <h1 className="text-center text-3xl p-5">{online} Online</h1>
+            <Button onClick={createGame}>Create Game</Button>
+
             <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-3 gap-4 p-8 h-full">
-                <div className="col-span-2 row-start-2 row-span-3 lg:row-span-3 relative">
-                    <ChatBox user={user} roomId={roomId} socket={socket} isViewer={isViewer} setViewer={setViewer} />
-                </div>
-                <div className="col-span-2 lg:col-start-3 lg:row-span-2 flex flex-col gap-2">
-                    <GeneralInfo name={"Who's the AI"} roomId={roomId}/>
-                    <UsersList user={user} users={users} socket={socket} isViewer={isViewer} />
-                    <Settings user={user} socket={socket} roomId={roomId} />
-                </div>
-                <div className="col-start-3 row-start-3"></div>
+                {games?.map((game, index) => {
+                    if (!game) return null;
+
+                    console.log(game.players)
+
+                    return (
+                        <div
+                            key={index}
+                            className={`bg-gray-700 rounded-2xl shadow-2xl flex flex-col p-5 min-h-[250px]`}
+                        >
+                            <h1>{game.name}</h1>
+                            <p>{game.description}</p>
+                            <p>
+                                Players: {game.players}/{game.maxPlayers}
+                            </p>
+                            {game.status === "waiting" ? (<p>Start in: {timers[index]}</p>) : "Already started"}
+                            <Link
+                                href={{
+                                    pathname: "/room",
+                                    query: { id: game.id },
+                                }}
+                            >
+                                <Button className="mt-auto" disabled={!game.canJoin}>
+                                    Join Game
+                                </Button>
+                            </Link>
+                        </div>
+                    );
+                })}
             </div>
         </main>
     );

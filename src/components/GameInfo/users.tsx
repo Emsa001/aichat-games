@@ -2,60 +2,56 @@ import { useEffect, useState } from "react";
 import { Button, CodeMockup } from "react-daisyui";
 import { MdOutlineReportProblem } from "react-icons/md";
 import { Socket } from "socket.io-client";
-import { Bounce, ToastContainer, toast } from 'react-toastify';
+import { Bounce, ToastContainer, toast } from "react-toastify";
+import { Game, Player } from "@/types";
 
 const colorVariants = {
     selected: "bg-red-500 text-white",
     default: "hover:bg-red-500 hover:text-white",
 };
 
-interface User {
-    id: string;
-    username: string;
-    admin: boolean;
-}
-
 interface Data {
-    user: User | null,
-    socket: Socket | null,
-    users: string[],
-    isViewer: boolean,
+    user: Player | null;
+    game: Game | null;
+    players: Player[];
+    socket: Socket | null;
 }
 
-export default function UsersList({socket, users, user, isViewer}:Data){
-    const [vote, setVote] = useState("");
+export default function UsersList({ user, game, players, socket }: Data) {
+    const [vote, setVote] = useState<Player | null>(null);
     const [canVote, setCanVote] = useState(false);
     const [timer, setTimer] = useState(-1);
 
-    const handleVote = (voteUser: string) => {
-        if (!canVote || isViewer) return;
+    console.log(players)
+
+    const handleVote = (voteUser: Player) => {
+        if (!canVote) return;
 
         setVote(voteUser);
     };
-    
-    function StartTimer(startTime:number) {
+
+    function StartTimer(startTime: number) {
         setTimer(startTime);
         const intervalId = setInterval(() => {
-            setTimer(prevTimer => prevTimer - 1);
+            setTimer((prevTimer) => prevTimer - 1);
         }, 1000);
-    
+
         setTimeout(() => {
             clearInterval(intervalId);
             setTimer(0);
         }, startTime * 1000);
     }
 
-    useEffect(() => {   
+    useEffect(() => {
         if (timer === 0 && canVote) {
             socket?.emit("vote", { vote, userId: user?.id });
-            setVote("");
+            setVote(null);
             setCanVote(false);
         }
     }, [timer, canVote, socket, user, vote]);
-      
 
     useEffect(() => {
-        socket?.on("start-vote", (time:number) => {
+        socket?.on("start-vote", (time: number) => {
             StartTimer(time);
             setCanVote(true);
         });
@@ -84,17 +80,31 @@ export default function UsersList({socket, users, user, isViewer}:Data){
         <div>
             <CodeMockup className="w-full relative max-h-[600px] overflow-auto">
                 <TimerElement />
-                <CodeMockup.Line status="info"className="mb-3">Users: {users?.length}</CodeMockup.Line>
-                {users?.map((user: any) => {
+                <CodeMockup.Line status="info" className="mb-3">
+                    Users: {game?.players}/{game?.maxPlayers}
+                </CodeMockup.Line>
+                {players?.map((player: Player, index) => {
+
+                    if(user?.id == player.id){
+                        return (
+                            <CodeMockup.Line
+                                key={index}
+                                className="bg-gray-700  cursor-pointer"
+                            >
+                            You
+                            </CodeMockup.Line>
+                        );
+                    }
+
                     return (
                         <CodeMockup.Line
-                            key={user}
+                            key={index}
                             className={`${
-                                vote == user ? colorVariants["selected"] : colorVariants["default"]
+                                vote == player ? colorVariants["selected"] : colorVariants["default"]
                             } cursor-pointer`}
-                            onClick={() => handleVote(user)}
+                            onClick={() => handleVote(player)}
                         >
-                            {user}
+                            {player.name}
                         </CodeMockup.Line>
                     );
                 })}

@@ -1,29 +1,24 @@
-import { useState } from "react";
+import { Game, Player } from "@/types";
+import { use, useEffect, useState } from "react";
 import { Button, Textarea } from "react-daisyui";
 import { Socket } from "socket.io-client";
 
-interface User {
-    id: string;
-    username: string;
-    admin: boolean;
-}
-
 interface Data {
-    user: User | null,
-    roomId: string,
+    game: Game | null,
     socket: Socket | null,
-    allowInput: boolean,
-    setAllowInput: (value: boolean) => void;
 }
 
-export default function MessageInput({user, roomId, socket, allowInput, setAllowInput }:Data) {
+export default function MessageInput({game, socket }:Data) {
     const [message, setMessage] = useState<string>("");
+
+    useEffect(() => {
+        socket?.emit("test", { text: "test" });
+    },[socket]);
 
     const handleSendMessage = (e : any) => {
         e?.preventDefault();
-        socket?.emit("message", { roomId, userId: user?.id, message });
+        socket?.emit("test", { text: message });
         setMessage("");
-        setAllowInput(false);
     }
 
     const handleKeyDown = (e : any) => {
@@ -38,7 +33,7 @@ export default function MessageInput({user, roomId, socket, allowInput, setAllow
             <div className="relative">
                 <form onSubmit={handleSendMessage}>
                     <Textarea
-                        disabled={!allowInput}
+                        // disabled={!game?.canWrite}
                         className="w-full pr-[80px]"
                         placeholder="Your message"
                         onKeyDown={handleKeyDown}

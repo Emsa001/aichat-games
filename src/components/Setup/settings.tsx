@@ -2,25 +2,21 @@ import Link from "next/link";
 import { Button } from "react-daisyui";
 import { Socket } from "socket.io-client";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
+import { Game, Player } from "@/types";
 
-interface User {
-    id: string;
-    username: string;
-    admin: boolean;
-}
 
 interface Data {
-    user: User | null,
+    user: Player | null,
+    game: Game | null,
     socket: Socket | null,
-    roomId: string
 }
 
-export default function Settings({user, socket, roomId}:Data){
+export default function Settings({user, game, socket}:Data){
     const AdminSettings = () => {
         if(user?.admin != true) return ;
 
         const handleStartGame = () => {
-            socket?.emit("startGame", { roomId });
+            socket?.emit("startGame", { gameId: game?.id });
         }
 
         return (
@@ -32,7 +28,8 @@ export default function Settings({user, socket, roomId}:Data){
     }
 
     const handleInvite = () => {
-        navigator?.clipboard?.writeText(`http://localhost:3000?room=${roomId}`);
+        if(game == null) return ;
+        navigator?.clipboard?.writeText(`http://localhost:3000?room=${game.id}`);
         toast.success('Invitation copied!', {
             position: "bottom-center",
             autoClose: 2000,
@@ -47,8 +44,10 @@ export default function Settings({user, socket, roomId}:Data){
 
     return (
         <div className="flex flex-col gap-2 mt-5">
-            <Button color="success" className="w-full text-lg uppercase rounded-2xl" onClick={handleInvite}>Invite</Button>
-            <Button color="error" className="w-full text-lg uppercase rounded-2xl">Leave</Button>
+            <Button color="success" className="w-full text-lg uppercase rounded-2xl" onClick={handleInvite} disabled={!game?.canJoin}>Invite</Button>
+            <a href="/">
+                <Button color="error" className="w-full text-lg uppercase rounded-2xl">Leave</Button>
+            </a>
             <AdminSettings />
             <ToastContainer />
         </div>
