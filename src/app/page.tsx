@@ -79,26 +79,27 @@ export default function Home() {
             games.forEach((game: Game, index: number) => {
                 const startTime = new Date(game.startTime).getTime();
                 const currentTime = new Date().getTime();
-                const timeDifference = Math.max(0, startTime - currentTime); // Ensure the timer doesn't go negative
+                const timeDifference = Math.max(0, startTime - currentTime); 
 
-                updatedTimers[index] = Math.floor(timeDifference / 1000); // Convert milliseconds to seconds
+                updatedTimers[index] = Math.floor(timeDifference / 1000);
             });
 
             setTimers(updatedTimers);
         };
 
-        // Call updateTimers immediately to update timers without delay
         updateTimers();
-
-        // Update timers every second
         const timerInterval = setInterval(updateTimers, 1000);
 
-        // Clear interval on component unmount or if games array changes
         return () => clearInterval(timerInterval);
     }, [games]);
 
     if (!Array.isArray(games)) {
         return <p>No game information available.</p>;
+    }
+
+    const joinGame = (game: Game) => {
+        if(!game.canJoin) return;
+        window.location.href = `/room?id=${game.id}`;
     }
 
     return (
@@ -123,16 +124,9 @@ export default function Home() {
                                 Players: {game.players}/{game.maxPlayers}
                             </p>
                             {game.status === "waiting" ? (<p>Start in: {timers[index]}</p>) : "Already started"}
-                            <Link
-                                href={{
-                                    pathname: "/room",
-                                    query: { id: game.id },
-                                }}
-                            >
-                                <Button className="mt-auto" disabled={!game.canJoin}>
-                                    Join Game
-                                </Button>
-                            </Link>
+                            <Button className="mt-auto w-full" disabled={!game.canJoin} onClick={() => joinGame(game)}>
+                                Join Game
+                            </Button>
                         </div>
                     );
                 })}

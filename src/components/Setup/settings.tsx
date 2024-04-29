@@ -29,13 +29,12 @@ export default function Settings({user, game, socket}:Data){
 
     const handleInvite = () => {
         if(game == null) return ;
-        navigator?.clipboard?.writeText(`http://localhost:3000?room=${game.id}`);
+        navigator?.clipboard?.writeText(`http://localhost:3000/room?id=${game.id}`);
         toast.success('Invitation copied!', {
             position: "bottom-center",
             autoClose: 2000,
             hideProgressBar: false,
             closeOnClick: true,
-            draggable: true,
             theme: "dark",
             transition: Bounce,
             toastId: "invitation"
@@ -49,7 +48,7 @@ export default function Settings({user, game, socket}:Data){
                 <Button color="error" className="w-full text-lg uppercase rounded-2xl">Leave</Button>
             </a>
             <AdminSettings />
-            <ToastContainer />
+            
         </div>
     )
 }

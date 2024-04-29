@@ -4,6 +4,7 @@ import { MdOutlineReportProblem } from "react-icons/md";
 import { Socket } from "socket.io-client";
 import { Bounce, ToastContainer, toast } from "react-toastify";
 import { Game, Player } from "@/types";
+import { StartTimer } from "@/utils/timer";
 
 const colorVariants = {
     selected: "bg-red-500 text-white",
@@ -19,53 +20,29 @@ interface Data {
 
 export default function UsersList({ user, game, players, socket }: Data) {
     const [vote, setVote] = useState<Player | null>(null);
-    const [canVote, setCanVote] = useState(false);
     const [timer, setTimer] = useState(-1);
 
-    console.log(players)
-
     const handleVote = (voteUser: Player) => {
-        if (!canVote) return;
+        if (!game?.canVote) return;
 
         setVote(voteUser);
+        socket?.emit("vote", { gameId: game.id, vote: voteUser.id });
     };
 
-    function StartTimer(startTime: number) {
-        setTimer(startTime);
-        const intervalId = setInterval(() => {
-            setTimer((prevTimer) => prevTimer - 1);
-        }, 1000);
-
-        setTimeout(() => {
-            clearInterval(intervalId);
-            setTimer(0);
-        }, startTime * 1000);
-    }
-
     useEffect(() => {
-        if (timer === 0 && canVote) {
-            socket?.emit("vote", { vote, userId: user?.id });
-            setVote(null);
-            setCanVote(false);
+        if (socket) {
+            socket.on("timer", (data) => {
+                setTimer(data.time);
+                StartTimer(data?.time, setTimer);
+            });
         }
-    }, [timer, canVote, socket, user, vote]);
-
-    useEffect(() => {
-        socket?.on("start-vote", (time: number) => {
-            StartTimer(time);
-            setCanVote(true);
-        });
-
-        socket?.on("end-vote", () => {
-            setTimer(-1);
-            setCanVote(false);
-        });
 
         return () => {
-            socket?.off("start-vote");
-            socket?.off("end-vote");
+            if (socket) {
+                socket.off("timer");
+            }
         };
-    }, [socket]);
+    });
 
     const TimerElement = () => {
         if (timer < 0) return;
@@ -109,7 +86,6 @@ export default function UsersList({ user, game, players, socket }: Data) {
                     );
                 })}
             </CodeMockup>
-            <ToastContainer />
         </div>
     );
 }

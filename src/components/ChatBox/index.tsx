@@ -5,6 +5,7 @@ import { Socket } from "socket.io-client";
 import { useEffect, useRef, useState } from "react";
 import SetUp from "../Setup";
 import { Game, Player } from "@/types";
+import { StartTimer } from "@/utils/timer";
 
 interface Data {
     user: Player | null;
@@ -24,17 +25,23 @@ export default function ChatBox({ user, game, socket }: Data) {
     const [timer, setTimer] = useState(-1);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    
     useEffect(() => {
         if (socket) {
             socket.on("message", (data) => {
                 data.text = data.text.replaceAll(`${user?.name}`,"You");  
                 setMessages((prev) => [...prev, data]);
             });
+            socket.on("timer", (data) => {
+                setTimer(data.time);
+                StartTimer(data?.time, setTimer);
+            });
         }
 
         return () => {
             if (socket) {
                 socket.off("message");
+                socket.off("timer");
             }
         };
     });
@@ -57,8 +64,8 @@ export default function ChatBox({ user, game, socket }: Data) {
         <>
             <div className="lg:h-full">
                 <div className="flex flex-col h-full justify-between mx-auto">
-                    <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl min-h-[70vh] mb-10 p-10 w-full">
-                        <div className="overflow-y-auto max-h-[65vh]">
+                    <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl min-h-[70vh] mb-10 w-full">
+                        <div className="overflow-y-auto px-10 pb-24 max-h-[70vh]">
                             {messages.map((message, index) => {
                                 switch (message.type) {
                                     case "info":
@@ -74,23 +81,23 @@ export default function ChatBox({ user, game, socket }: Data) {
                                             </Alert>
                                         );
                                     default:
+                                        const isUser = message.username === user?.name;
                                         return (
                                             <Bubble
-                                                header={message.username}
+                                                header={isUser ? "You" : message.username}
                                                 message={message.text}
                                                 key={index}
-                                                side={message.username === user?.name ? "end" : "front"}
+                                                side={isUser ? "end" : "front"}
                                             />
                                         );
                                 }
                             })}
-                            {/* This empty div serves as a reference point for scrolling */}
                             <div ref={messagesEndRef} />
                         </div>
                         <TimerElement />
                     </div>
 
-                    {!user?.viewer && <MessageInput game={game} socket={socket} />}
+                    {!user?.viewer && <MessageInput user={user} game={game} socket={socket} />}
                 </div>
             </div>
         </>

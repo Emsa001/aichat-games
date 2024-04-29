@@ -8,7 +8,7 @@ export interface Game {
     color: string;
     status: string;
     canJoin: boolean;
-    canWrite: boolean;
+    canVote: boolean;
     startTime: Date;
 }
 
@@ -17,4 +17,5 @@ export interface Player {
     name: string;
     admin: boolean;
     viewer: boolean;
+    canWrite: boolean;
 }

@@ -13,4 +13,4 @@ function StartTimer(startTime: number, setTimer: any): Promise<void> {
     });
 }
 
-module.exports = StartTimer;
+export { StartTimer };

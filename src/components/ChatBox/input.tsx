@@ -4,20 +4,17 @@ import { Button, Textarea } from "react-daisyui";
 import { Socket } from "socket.io-client";
 
 interface Data {
+    user: Player | null,
     game: Game | null,
     socket: Socket | null,
 }
 
-export default function MessageInput({game, socket }:Data) {
+export default function MessageInput({user, game, socket }:Data) {
     const [message, setMessage] = useState<string>("");
-
-    useEffect(() => {
-        socket?.emit("test", { text: "test" });
-    },[socket]);
 
     const handleSendMessage = (e : any) => {
         e?.preventDefault();
-        socket?.emit("test", { text: message });
+        socket?.emit("message", { gameId:game?.id, text: message });
         setMessage("");
     }
 
@@ -33,7 +30,7 @@ export default function MessageInput({game, socket }:Data) {
             <div className="relative">
                 <form onSubmit={handleSendMessage}>
                     <Textarea
-                        // disabled={!game?.canWrite}
+                        disabled={!user?.canWrite}
                         className="w-full pr-[80px]"
                         placeholder="Your message"
                         onKeyDown={handleKeyDown}

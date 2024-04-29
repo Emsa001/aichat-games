@@ -10,7 +10,7 @@ import ChatBox from "@/components/ChatBox";
 import GeneralInfo from "@/components/GameInfo/general";
 import UsersList from "@/components/GameInfo/users";
 import Settings from "@/components/Setup/settings";
-
+import Swal from "sweetalert2";
 
 export default function Room() {
     const [game, setGame] = useState<Game | null>(null);
@@ -30,26 +30,37 @@ export default function Room() {
     useEffect(() => {
         if (!socket) return;
 
+        socket.on("close", (data: any) => {
+            Swal.fire({
+                title: data?.title || "Connection lost",
+                text: data?.message || "Please refresh the page to reconnect",
+                icon: data?.icon || "error",
+                confirmButtonText: "Go to lobby",
+            }).then(() => {
+                window.location.href = "/";
+            });
+        });
+
         socket.on("data", (data: any) => {
-            if(data?.game) setGame(data?.game);
-            if(data?.user) setUser(data?.user || null);
-            if(data?.players){
+            if (data?.game) setGame(data?.game);
+            if (data?.user) setUser(data?.user || null);
+            if (data?.players) {
                 const updatedPlayers = data.players || [];
-            
+
                 const userIndex = updatedPlayers.findIndex((player: Player) => player.id === user?.id);
                 let updatedPlayersWithoutUser = updatedPlayers;
                 let removedUser: Player | null = null;
-                
-                if (userIndex !== -1)
-                    removedUser = updatedPlayersWithoutUser.splice(userIndex, 1)[0];
+
+                if (userIndex !== -1) removedUser = updatedPlayersWithoutUser.splice(userIndex, 1)[0];
                 setPlayers(updatedPlayersWithoutUser);
                 if (removedUser) {
-                    setPlayers(prevPlayers => [removedUser as Player, ...prevPlayers]);
+                    setPlayers((prevPlayers) => [removedUser as Player, ...prevPlayers]);
                 }
             }
         });
-        
+
         return () => {
+            socket.off("close");
             socket.off("data");
         };
     }, [socket, user]);
@@ -60,9 +71,6 @@ export default function Room() {
             socket.emit("joinGame", { id: searchParams.get("id") });
         }
     }, [socket]);
-
-
-    // if(!game) return "Loading...";
 
     return (
         <main className="bg-gray-800 min-h-screen">
