@@ -29,8 +29,10 @@ export default function ChatBox({ user, game, socket }: Data) {
     useEffect(() => {
         if (socket) {
             socket.on("message", (data) => {
-                data.text = data.text.replaceAll(`${user?.name}`,"You");  
-                setMessages((prev) => [...prev, data]);
+                if(data.text){
+                    data.text = data.text.replaceAll(`${user?.name}`,"You");  
+                    setMessages((prev) => [...prev, data]);
+                }
             });
             socket.on("timer", (data) => {
                 setTimer(data.time);
@@ -49,7 +51,6 @@ export default function ChatBox({ user, game, socket }: Data) {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
-
 
     const TimerElement = () => {
         if (timer <= 0) return;
@@ -85,7 +86,7 @@ export default function ChatBox({ user, game, socket }: Data) {
                                         return (
                                             <Bubble
                                                 header={isUser ? "You" : message.username}
-                                                message={message.text}
+                                                message={message.text.toLocaleLowerCase()}
                                                 key={index}
                                                 side={isUser ? "end" : "front"}
                                             />

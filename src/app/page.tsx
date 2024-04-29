@@ -103,9 +103,11 @@ export default function Home() {
     }
 
     return (
-        <main className="bg-gray-800 min-h-screen">
-            <h1 className="text-center text-3xl p-5">{online} Online</h1>
-            <Button onClick={createGame}>Create Game</Button>
+        <main className="bg-gray-800 min-h-screen w-screen">
+            <div className="flex flex-col justify-center items-center w-full">
+                <h1 className="text-center text-3xl p-5">{online} Online</h1>
+                <Button onClick={createGame}>Create Game</Button>
+            </div>
 
             <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-3 gap-4 p-8 h-full">
                 {games?.map((game, index) => {
