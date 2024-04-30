@@ -25,7 +25,6 @@ export default function ChatBox({ user, game, socket }: Data) {
     const [timer, setTimer] = useState(-1);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    
     useEffect(() => {
         if (socket) {
             socket.on("message", (data) => {

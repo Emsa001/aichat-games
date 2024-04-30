@@ -13,7 +13,7 @@ interface Data {
 
 export default function Settings({user, game, socket}:Data){
     const AdminSettings = () => {
-        if(user?.admin != true) return ;
+        if(user?.admin != true || game?.status != "waiting") return ;
 
         const handleStartGame = () => {
             socket?.emit("startGame", { gameId: game?.id });
@@ -22,7 +22,6 @@ export default function Settings({user, game, socket}:Data){
         return (
             <div className="flex flex-col mt-10 gap-2">
                 <Button className="w-full" onClick={handleStartGame}>Start Game</Button>
-                <Button className="w-full">End Round</Button>
             </div>
         )
     }
