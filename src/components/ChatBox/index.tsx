@@ -3,7 +3,6 @@ import MessageInput from "./input";
 import Bubble from "./bubble";
 import { Socket } from "socket.io-client";
 import { useEffect, useRef, useState } from "react";
-import SetUp from "../Setup";
 import { Game, Player } from "@/types";
 import { StartTimer } from "@/utils/timer";
 
@@ -28,8 +27,8 @@ export default function ChatBox({ user, game, socket }: Data) {
     useEffect(() => {
         if (socket) {
             socket.on("message", (data) => {
-                if(data.text){
-                    data.text = data.text.replaceAll(`${user?.name}`,"You");  
+                if (data.text) {
+                    data.text = data.text.replaceAll(`${user?.name}`, "You");
                     setMessages((prev) => [...prev, data]);
                 }
             });
@@ -48,7 +47,7 @@ export default function ChatBox({ user, game, socket }: Data) {
     });
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
     const TimerElement = () => {
@@ -62,10 +61,10 @@ export default function ChatBox({ user, game, socket }: Data) {
 
     return (
         <>
-            <div className="lg:h-full">
-                <div className="flex flex-col h-full justify-between mx-auto">
-                    <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl min-h-[70vh] mb-10 w-full">
-                        <div className="overflow-y-auto px-10 pb-24 max-h-[70vh]">
+            <div className="min-h-[500px] h-full">
+                <div className="flex flex-col justify-between mx-auto h-full">
+                    <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl mb-10 w-full h-full">
+                        <div className="overflow-y-auto px-10 pb-24 max-h-[90vw]">
                             {messages.map((message, index) => {
                                 switch (message.type) {
                                     case "info":

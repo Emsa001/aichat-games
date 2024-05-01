@@ -30,8 +30,10 @@ export default function UsersList({ user, game, players, socket }: Data) {
     };
 
     useEffect(() => {
+        if(game?.canVote == false) return ;
+        
         if (socket) {
-            socket.on("timer", (data) => {
+            socket.on("time", (data) => {
                 setTimer(data.time);
                 StartTimer(data?.time, setTimer);
             });
@@ -45,7 +47,7 @@ export default function UsersList({ user, game, players, socket }: Data) {
     });
 
     const TimerElement = () => {
-        if (timer < 0) return;
+        if (timer <= 0) return;
         return (
             <p className="absolute top-3 right-3">
                 Vote in: <b>{timer}</b>
@@ -55,7 +57,7 @@ export default function UsersList({ user, game, players, socket }: Data) {
 
     return (
         <div>
-            <CodeMockup className="w-full relative max-h-[600px] overflow-auto">
+            <CodeMockup className="w-full relative overflow-auto">
                 <TimerElement />
                 <CodeMockup.Line status="info" className="mb-3">
                     Users: {game?.players}/{game?.maxPlayers}
@@ -66,7 +68,7 @@ export default function UsersList({ user, game, players, socket }: Data) {
                         return (
                             <CodeMockup.Line
                                 key={index}
-                                className="bg-gray-700  cursor-pointer"
+                                className="bg-gray-700 cursor-pointer"
                             >
                             You
                             </CodeMockup.Line>

@@ -5,7 +5,6 @@ import { use, useEffect, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import { api } from "@/config.json";
 import { useSearchParams } from "next/navigation";
-import SetUp from "@/components/Setup";
 import ChatBox from "@/components/ChatBox";
 import GeneralInfo from "@/components/GameInfo/general";
 import UsersList from "@/components/GameInfo/users";
@@ -73,19 +72,18 @@ export default function Room() {
     }, [socket]);
 
     return (
-        <main className="bg-gray-800 min-h-screen">
-            <SetUp socket={socket} />
-            <h1 className="text-center pt-5">AI Games</h1>
-            <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-3 gap-4 p-8 h-full">
-                <div className="col-span-2 row-start-2 row-span-3 lg:row-span-3 relative">
+        <main className="bg-gray-800 px-2 h-screen p-12">
+            <div className="grid gap-4 mx-auto justify-center h-full">
+                <div className="md:row-span-2 row-start-2 md:w-[50vw] max-w-[600px]">
                     <ChatBox user={user} game={game} socket={socket} />
                 </div>
-                <div className="col-span-2 lg:col-start-3 lg:row-span-2 flex flex-col gap-2">
+                <div className="flex flex-col gap-4 ">
                     <GeneralInfo game={game} />
                     <UsersList user={user} game={game} players={players} socket={socket} />
+                </div>
+                <div className="md:col-start-2 mt-auto mb-12">
                     <Settings user={user} game={game} socket={socket} />
                 </div>
-                <div className="col-start-3 row-start-3"></div>
             </div>
         </main>
     );

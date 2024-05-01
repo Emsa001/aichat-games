@@ -8,6 +8,7 @@ import { Button, CodeMockup } from "react-daisyui";
 import { Bounce, toast } from "react-toastify";
 import Link from "next/link";
 import { api } from "@/config.json";
+import GameCard from "@/components/Card/game";
 
 export default function Home() {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -71,35 +72,8 @@ export default function Home() {
         socket.emit("join");
     }, [socket]);
 
-    useEffect(() => {
-        // Function to update timers
-        const updateTimers = () => {
-            const updatedTimers: { [key: number]: number } = {};
-
-            games.forEach((game: Game, index: number) => {
-                const startTime = new Date(game.startTime).getTime();
-                const currentTime = new Date().getTime();
-                const timeDifference = Math.max(0, startTime - currentTime); 
-
-                updatedTimers[index] = Math.floor(timeDifference / 1000);
-            });
-
-            setTimers(updatedTimers);
-        };
-
-        updateTimers();
-        const timerInterval = setInterval(updateTimers, 1000);
-
-        return () => clearInterval(timerInterval);
-    }, [games]);
-
     if (!Array.isArray(games)) {
         return <p>No game information available.</p>;
-    }
-
-    const joinGame = (game: Game) => {
-        if(!game.canJoin) return;
-        window.location.href = `/room?id=${game.id}`;
     }
 
     return (
@@ -109,28 +83,11 @@ export default function Home() {
                 <Button onClick={createGame}>Create Game</Button>
             </div>
 
-            <div className="grid grid-cols-1 grid-rows-4 lg:grid-cols-3 lg:grid-rows-3 gap-4 p-8 h-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-8">
                 {games?.map((game, index) => {
                     if (!game) return null;
 
-                    console.log(game.players)
-
-                    return (
-                        <div
-                            key={index}
-                            className={`bg-gray-700 rounded-2xl shadow-2xl flex flex-col p-5 min-h-[250px]`}
-                        >
-                            <h1>{game.name}</h1>
-                            <p>{game.description}</p>
-                            <p>
-                                Players: {game.players}/{game.maxPlayers}
-                            </p>
-                            {game.status === "waiting" ? (<p>Start in: {timers[index]}</p>) : "Already started"}
-                            <Button className="mt-auto w-full" disabled={!game.canJoin} onClick={() => joinGame(game)}>
-                                Join Game
-                            </Button>
-                        </div>
-                    );
+                    return <GameCard game={game} />
                 })}
             </div>
         </main>
