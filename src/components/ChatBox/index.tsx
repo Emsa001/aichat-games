@@ -64,7 +64,7 @@ export default function ChatBox({ user, game, socket }: Data) {
             <div className="min-h-[500px] h-full">
                 <div className="flex flex-col justify-between mx-auto h-full">
                     <div className="relative mx-auto shadow-2xl bg-gray-600 rounded-2xl mb-10 w-full h-full">
-                        <div className="overflow-y-auto px-10 pb-24 max-h-[90vw]">
+                        <div className="overflow-y-auto px-10 pb-24 max-h-[70vh]">
                             {messages.map((message, index) => {
                                 switch (message.type) {
                                     case "info":
