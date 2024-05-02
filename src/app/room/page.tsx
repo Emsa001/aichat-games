@@ -1,22 +1,21 @@
 "use client";
 
 import { Game, Player } from "@/types";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import io, { Socket } from "socket.io-client";
 import { api } from "@/config.json";
-import { useSearchParams } from "next/navigation";
 import ChatBox from "@/components/ChatBox";
 import GeneralInfo from "@/components/GameInfo/general";
 import UsersList from "@/components/GameInfo/users";
 import Settings from "@/components/Setup/settings";
 import Swal from "sweetalert2";
+import { useSearchParams } from 'next/navigation';
 
 export default function Room() {
     const [game, setGame] = useState<Game | null>(null);
     const [socket, setSocket] = useState<Socket | null>(null);
     const [players, setPlayers] = useState<Player[]>([]);
     const [user, setUser] = useState<Player | null>(null);
-    const searchParams = useSearchParams();
 
     useEffect(() => {
         const newSocket = io(api, {
@@ -66,10 +65,15 @@ export default function Room() {
 
     useEffect(() => {
         if (socket) {
-            console.log(searchParams.get("id"));
-            socket.emit("joinGame", { id: searchParams.get("id") });
+            const queryParams = new URLSearchParams(window.location.search);
+            const gameId = queryParams.get("id");
+            if (gameId) {
+                socket.emit("joinGame", { id: gameId });
+            }
         }
     }, [socket]);
+
+    if (!socket) return null; // Render nothing until socket is initialized
 
     return (
         <main className="bg-gray-800 px-2 h-screen p-12">

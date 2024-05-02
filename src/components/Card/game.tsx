@@ -1,9 +1,4 @@
-import { Game, Player } from "@/types";
-import ChatBox from "../ChatBox";
-import GeneralInfo from "../GameInfo/general";
-import UsersList from "../GameInfo/users";
-import Settings from "../Setup/settings";
-import { Socket } from "socket.io-client";
+import { Game } from "@/types";
 import { useEffect, useState } from "react";
 import { Button } from "react-daisyui";
 
@@ -34,7 +29,7 @@ export default function GameCard({ game }: Data) {
         const timerInterval = setInterval(updateTimers, 1000);
 
         return () => clearInterval(timerInterval);
-    }, [null]);
+    }, [game.startTime]);
 
     const gameStatus = game.status === "waiting" ? `Start in: ${timer}` : "Already started";
 

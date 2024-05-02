@@ -87,7 +87,7 @@ export default function Home() {
                 {games?.map((game, index) => {
                     if (!game) return null;
 
-                    return <GameCard game={game} />
+                    return <GameCard key={index} game={game} />
                 })}
             </div>
         </main>
